@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Cutting Plan FFD</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <img src="/static/logo.png" alt="Logo" class="header-logo"
+         onerror="this.style.display='none';document.getElementById('logo-fb').style.display='block'"/>
+    <span class="header-logo-fallback" id="logo-fb" style="display:none">Cutting Plan</span>
+    <div class="header-sep"></div>
+    <span class="header-title">Cutting Plan Optimizer</span>
+  </div>
+</header>
+
+<main class="app-main">
+
+  <div class="tabs">
+    <button class="tab active" id="tab-input"  onclick="switchTab('input')">Input &amp; BQ</button>
+    <button class="tab"        id="tab-result" onclick="switchTab('result')">Hasil</button>
+  </div>
+
+  <!-- PANE INPUT -->
+  <div id="pane-input">
+
+    <section class="card card-excel">
+      <div class="excel-header">
+        <div>
+          <h2 class="card-title" style="margin:0;padding:0;border:none">Import dari Excel</h2>
+          <p style="font-size:11px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
+            Kolom: Mark &middot; Sub Mark &middot; QTY &middot; Profile &middot; Length
+          </p>
+        </div>
+        <a href="/api/template" class="btn-dl" download>Download Template</a>
+      </div>
+      <div class="upload-area" id="upload-area"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <input type="file" id="excel-file" accept=".xlsx,.xls" style="display:none" onchange="onFileChange(event)"/>
+        <div class="upload-text">Drag &amp; drop file Excel di sini, atau</div>
+        <button class="btn btn-sec" onclick="document.getElementById('excel-file').click()">Pilih File</button>
+        <div class="upload-hint">.xlsx / .xls &middot; maks 10 MB</div>
+      </div>
+      <div id="upload-status" class="hidden"></div>
+    </section>
+
+    <div class="divider"><span>atau isi manual</span></div>
+
+    <section class="card">
+      <h2 class="card-title">Material Plat</h2>
+      <div class="fg fg-5">
+        <div class="fg-item">
+          <label for="mat-nama">Kode Material</label>
+          <input type="text" id="mat-nama" placeholder="PL 8"/>
+        </div>
+        <div class="fg-item">
+          <label for="mat-tebal">Tebal (mm)</label>
+          <input type="number" id="mat-tebal" value="8" min="0.1" step="0.1"/>
+        </div>
+        <div class="fg-item">
+          <label for="mat-panjang">Panjang (mm)</label>
+          <input type="number" id="mat-panjang" value="2400" min="1" step="100"/>
+        </div>
+        <div class="fg-item">
+          <label for="mat-lebar">Lebar (mm)</label>
+          <input type="number" id="mat-lebar" value="1200" min="1" step="100"/>
+        </div>
+        <div class="fg-item">
+          <label for="mat-bj">Berat Jenis (kg/dm&sup3;)</label>
+          <input type="number" id="mat-bj" value="7.85" min="0.1" step="0.01"/>
+        </div>
+      </div>
+      <div class="fg fg-2" style="margin-top:10px">
+        <div class="fg-item">
+          <label for="mat-kerf">Kerf (mm)</label>
+          <input type="number" id="mat-kerf" value="5" min="0" step="1"/>
+        </div>
+        <div class="fg-item" style="display:flex;align-items:flex-end">
+          <div class="info-box">
+            Berat 1 plat: <strong id="berat-plat-val">--</strong> kg
+            &nbsp;&middot;&nbsp;
+            Luas: <strong id="luas-plat-val">--</strong> m&sup2;
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Bill of Quantity</h2>
+      <div class="bq-head">
+        <span>Mark</span>
+        <span>Sub Mark</span>
+        <span>Lebar (mm)</span>
+        <span>Panjang (mm)</span>
+        <span>Qty</span>
+        <span></span>
+      </div>
+      <div id="bq-rows"></div>
+      <div class="bq-actions">
+        <button class="btn btn-sec" onclick="addRow()">+ Tambah Baris</button>
+        <button class="btn"         onclick="loadSample()">Contoh Data</button>
+        <button class="btn"         onclick="clearAll()">Reset</button>
+      </div>
+    </section>
+
+    <div class="center">
+      <button class="btn btn-pri btn-lg" onclick="calculate()">Hitung Cutting Plan</button>
+    </div>
+
+    <div id="input-error" class="error-box hidden"></div>
+
+  </div>
+
+  <!-- PANE RESULT -->
+  <div id="pane-result" class="hidden">
+
+    <section class="card">
+      <h2 class="card-title">Ringkasan</h2>
+      <div class="metrics-grid" id="metrics"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Bill of Quantity</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mark</th>
+              <th>Sub Mark</th>
+              <th>L &times; P (mm)</th>
+              <th>Qty</th>
+              <th>Berat Prediksi (kg)</th>
+            </tr>
+          </thead>
+          <tbody id="bq-analysis-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Visualisasi</h2>
+      <div class="legend" id="legend"></div>
+      <div id="plates-container"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Detail per Plat</h2>
+      <div class="table-wrap" id="detail-table"></div>
+    </section>
+
+  </div>
+
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
