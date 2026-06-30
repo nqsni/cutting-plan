@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 </head>
 <body>
   <header class="app-header">
@@ -44,7 +44,7 @@
             <span>atau <button class="link-btn" id="browse-btn">pilih dari komputer</button></span>
           </div>
           <div class="upload-hint">.xlsx · .xls · maks 16MB</div>
-          <a href="/download-template" class="template-link" onclick="event.stopPropagation()">↓ download template_upload_BQ.xlsx</a>
+          <a href="{{ url_for('download_template') }}" class="btn-dl" download>Download template_upload_BQ.xlsx</a>
         </div>
         <div class="upload-status" id="upload-status" hidden></div>
       </section>
@@ -102,6 +102,6 @@
     </div>
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
